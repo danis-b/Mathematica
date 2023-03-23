@@ -1,0 +1,47 @@
+dx = 4.58/0.529;
+dy = 6.48/0.529;
+a = 100/0.529;
+delta = 0.001;
+rMaxX = 1.5*dx;
+rMaxY = 5; 
+Z = 0.09;
+m = 0.02;
+coord = {{-1.5*dx,0},{1.5*dx,0}};
+
+ V[x_, y_] := 
+  Sum[(-Z)/(Sqrt[(x - coord[[i]][[1]])^2  + (y - coord[[i]][[2]])^2] +
+         delta)*
+     Exp[-Sqrt[(x - coord[[i]][[1]])^2  + (y - coord[[i]][[2]])^2]/
+       a] , {i, 2} ] + 2  ;
+
+{egnVal, egnVec} = NDEigensystem[
+   {(-1/(2*m))* Laplacian[R2D[x, y], {x, y}, "Cartesian"] + 
+     V[x, y]*R2D[x, y],
+    PeriodicBoundaryCondition[R2D[x, y], 
+     x == -rMaxX && -rMaxY <= y <= rMaxY, 
+     TranslationTransform[{rMaxX, -rMaxX}]],
+    PeriodicBoundaryCondition[R2D[x, y], 
+     x == rMaxX && -rMaxY <= y <= rMaxY, 
+     TranslationTransform[{-rMaxX, rMaxX}]],
+    DirichletCondition[
+     R2D[x, y] == 
+      0, (y == -rMaxY || y == rMaxY) && -rMaxX < x < rMaxX]},
+   R2D[x, y], {x, -rMaxX, rMaxX}, {y, -rMaxY, rMaxY}, 8, 
+   Method -> {"Eigensystem" -> {"Arnoldi", 
+       "MaxIterations" -> 1000000}(* "Direct"*), 
+     "PDEDiscretization" -> {"FiniteElement", {"MeshOptions" -> \
+{"MaxCellMeasure" -> 0.1}}}}  ];
+ord = Ordering[egnVal];
+Sort[Re[egnVal]];
+
+eVal = Sort[Re[egnVal]];
+Do[ Print[(eVal[[i]]-eVal[[1]])*27211],{i,1,8}] 
+
+
+Do[Export[ToString[i]<>".png", DensityPlot[Part[Re[egnVec],Part[ord,i]]^2,{x,-rMaxX,rMaxX},{y,-rMaxY,rMaxY}, 
+PlotTheme->"Minimal",  PlotPoints->100, PlotRange->All , AspectRatio ->0.3]],{i,1,8}]
+
+
+
+ 
+
